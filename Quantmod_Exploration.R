@@ -11,19 +11,10 @@ getSymbols(c("SPY",
              "COP"), from=as.Date("16-01-01", format="%y-%m-%d"))
 
 
-# Chart Series ------------------------------------------------------------
-x11()
-chartSeries(COP)
-addBBands()
-addMACD()
-addRSI()
-addExpiry()
-
-
 # Options Info ------------------------------------------------------------
 # Turning it into a function
 
-OptionChain <- function(stockTickerDF){
+OptionChain <- function(stockTickerDF, thePeriod=1){
   # get ticker name
   stockTicker <- deparse(substitute(stockTickerDF))
   
@@ -34,36 +25,56 @@ OptionChain <- function(stockTickerDF){
   theOptionChain <- getOptionChain(stockTicker, "2018")
   
   # Options Chain - Calls In the Money (NextOptions Expiry Date)
-  CallInTheMoney <- theOptionChain[[1]]$calls[theOptionChain[[1]]$calls$Strike <= getQuote(stockTicker)$Last,]
+  CallInTheMoney <- theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike <= getQuote(stockTicker)$Last,]
   
   # Options Chain - Puts In The Money (NextOptions Expiry Date)
-  PutInTheMoney <- theOptionChain[[1]]$puts[theOptionChain[[1]]$puts$Strike >= getQuote(stockTicker)$Last,]
+  PutInTheMoney <- theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike >= getQuote(stockTicker)$Last,]
   
   # Quick General Market Sentiment Based on Volumne of Options
   # Total vol sum of Call Option strike price out of money / Total vol sum of Put Option strike price out of money
   # 1 = Neutral
   # > 1 = Bullish
   # < 1 = Bearish
-  VolBull <- sum(theOptionChain[[1]]$calls[theOptionChain[[1]]$calls$Strike >= getQuote(stockTicker)$Last,]$Vol)
-  VolPut <- sum(theOptionChain[[1]]$puts[theOptionChain[[1]]$puts$Strike <= getQuote(stockTicker)$Last,]$Vol)
-  BullToPutRatio <- VolBull/VolPut
+  VolCall <- sum(theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]$Vol)
+  VolPut <- sum(theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike <= getQuote(stockTicker)$Last,]$Vol)
+  CallToPutRatioVol <- VolCall/VolPut
+  
+  # Quick General Market Sentiment Based on Open Interest of Options
+  # Total sum OI Call Option strike price out of money / Total sum OI Put Option strike price out of money
+  # 1 = Neutral
+  # > 1 = Bullish
+  # < 1 = Bearish
+  OICall <- sum(theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]$OI)
+  OIPut <- sum(theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike <= getQuote(stockTicker)$Last,]$OI)
+  CallToPutRatioOI <- OICall/OIPut
   
   # Options Chain - Calls Out of the Money (NextOptions Expiry Date)
-  CallOutOfTheMoney <- theOptionChain[[1]]$calls[theOptionChain[[1]]$calls$Strike >= getQuote(stockTicker)$Last,]
+  CallOutOfTheMoney <- theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]
   
   # Options Chain - Puts Out of The Money (NextOptions Expiry Date)
-  PutOutOfTheMoney <- theOptionChain[[1]]$puts[theOptionChain[[1]]$puts$Strike <= getQuote(stockTicker)$Last,]
+  PutOutOfTheMoney <- theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike <= getQuote(stockTicker)$Last,]
 
   # Return the List
   theList <- list("HistoricalOptionPriceDF" = HistoricalOptionPriceDF,
                   "theOptionChain" = theOptionChain,
                   "CallInTheMoney" = CallInTheMoney,
                   "PutInTheMoney" = PutInTheMoney,
-                  "VolBull" = VolBull,
+                  "VolCall" = VolCall,
                   "VolPut" = VolPut,
-                  "BullToPutRatio" = BullToPutRatio,
+                  "CallToPutRatioVol" = CallToPutRatioVol,
+                  "OICall" = OICall,
+                  "OIPut" = OIPut,
+                  "CallToPutRatioOI" = CallToPutRatioOI,
                   "CallOutOfTheMoney" = CallOutOfTheMoney,
                   "PutOutOfTheMoney" = PutOutOfTheMoney)
   
   return(theList)
 }
+
+# Chart Series ------------------------------------------------------------
+x11()
+chartSeries(SPY)
+addBBands()
+addMACD()
+addRSI()
+addExpiry()
