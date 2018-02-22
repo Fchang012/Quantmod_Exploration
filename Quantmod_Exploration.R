@@ -8,7 +8,9 @@ require(quantmod)
 # Get Stock Info ----------------------------------------------------------
 getSymbols(c("SPY",
              "BHF",
-             "COP"), from=as.Date("16-01-01", format="%y-%m-%d"))
+             "COP",
+             "T",
+             "MRK"), from=as.Date("16-01-01", format="%y-%m-%d"))
 
 
 # Options Info ------------------------------------------------------------
@@ -30,23 +32,23 @@ OptionChain <- function(stockTickerDF, thePeriod=1){
   # Options Chain - Puts In The Money (NextOptions Expiry Date)
   PutInTheMoney <- theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike >= getQuote(stockTicker)$Last,]
   
-  # Quick General Market Sentiment Based on Volumne of Options
-  # Total vol sum of Call Option strike price out of money / Total vol sum of Put Option strike price out of money
+  # Implementation of the Put/Call Ratio (Volume)
+  # Total vol sum of Call Option / Total vol sum of Put Option 
   # 1 = Neutral
-  # > 1 = Bullish
-  # < 1 = Bearish
-  VolCall <- sum(theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]$Vol)
-  VolPut <- sum(theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike <= getQuote(stockTicker)$Last,]$Vol)
-  CallToPutRatioVol <- VolCall/VolPut
+  # > 1 = Bearish
+  # < 1 = Bullish
+  VolPut <- sum(theOptionChain[[thePeriod]]$puts$Vol)
+  VolCall <- sum(theOptionChain[[thePeriod]]$calls$Vol)
+  PutToCallRatioVol <- VolPut/VolCall
   
-  # Quick General Market Sentiment Based on Open Interest of Options
-  # Total sum OI Call Option strike price out of money / Total sum OI Put Option strike price out of money
+  # Implementation of the Put/Call Ratio (Open Interest)
+  # Total sum OI Call Option / Total sum OI Put Option
   # 1 = Neutral
-  # > 1 = Bullish
-  # < 1 = Bearish
-  OICall <- sum(theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]$OI)
-  OIPut <- sum(theOptionChain[[thePeriod]]$puts[theOptionChain[[thePeriod]]$puts$Strike <= getQuote(stockTicker)$Last,]$OI)
-  CallToPutRatioOI <- OICall/OIPut
+  # > 1 = Bearish
+  # < 1 = Bullish
+  OIPut <- sum(theOptionChain[[thePeriod]]$puts$OI)
+  OICall <- sum(theOptionChain[[thePeriod]]$calls$OI)
+  PutToCallRatioOI <- OIPut/OICall
   
   # Options Chain - Calls Out of the Money (NextOptions Expiry Date)
   CallOutOfTheMoney <- theOptionChain[[thePeriod]]$calls[theOptionChain[[thePeriod]]$calls$Strike >= getQuote(stockTicker)$Last,]
@@ -61,19 +63,33 @@ OptionChain <- function(stockTickerDF, thePeriod=1){
                   "PutInTheMoney" = PutInTheMoney,
                   "VolCall" = VolCall,
                   "VolPut" = VolPut,
-                  "CallToPutRatioVol" = CallToPutRatioVol,
+                  "PutToCallRatioVol" = PutToCallRatioVol,
                   "OICall" = OICall,
                   "OIPut" = OIPut,
-                  "CallToPutRatioOI" = CallToPutRatioOI,
+                  "PutToCallRatioOI" = PutToCallRatioOI,
                   "CallOutOfTheMoney" = CallOutOfTheMoney,
                   "PutOutOfTheMoney" = PutOutOfTheMoney)
   
   return(theList)
 }
 
+# After running OptionChain function run this to get call spread with break @ the money
+callSpread <- function(theOptionList){
+  print(theOptionList$CallInTheMoney)
+  print("------------------------------------------------------------")
+  print(theOptionList$CallOutOfTheMoney)
+}
+
+# After running OptionChain function run this to get put spread with break @ the money
+putSpread <- function(theOptionList){
+  print(theOptionList$PutOutOfTheMoney)
+  print("------------------------------------------------------------")
+  print(theOptionList$PutInTheMoney)
+}
+
 # Chart Series ------------------------------------------------------------
 x11()
-chartSeries(SPY)
+chartSeries(BHF)
 addBBands()
 addMACD()
 addRSI()
