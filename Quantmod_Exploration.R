@@ -6,11 +6,8 @@ require(quantmod)
 
 
 # Get Stock Info ----------------------------------------------------------
-getSymbols(c("SPY",
-             "BHF",
-             "COP",
-             "T",
-             "MRK"), from=as.Date("16-01-01", format="%y-%m-%d"))
+getSymbols(c("VTI",
+             "T"), from=as.Date("18-01-01", format="%y-%m-%d"))
 
 
 # Options Info ------------------------------------------------------------
@@ -89,7 +86,7 @@ putSpread <- function(theOptionList){
 
 # Chart Series ------------------------------------------------------------
 x11()
-chartSeries(T)
+chartSeries(VTI)
 addBBands()
 addMACD()
 addRSI()
