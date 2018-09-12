@@ -89,7 +89,7 @@ putSpread <- function(theOptionList){
 
 # Chart Series ------------------------------------------------------------
 x11()
-chartSeries(BHF)
+chartSeries(T)
 addBBands()
 addMACD()
 addRSI()
